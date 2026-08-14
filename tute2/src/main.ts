@@ -264,10 +264,6 @@ const naryTreeExample = naryTree(1, [
  *
  */
 const depthNaryTree = <T>(tree: NaryTree<T>): number => {
-    if (!tree) {
-        return 0;
-    }
-
     return 1 + Math.max(0, ...tree.children.map(depthNaryTree));
 };
 
