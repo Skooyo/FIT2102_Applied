@@ -146,8 +146,16 @@ function mousePosObservable() {
     const source$ = fromEvent<MouseEvent>(document, "mousemove");
 
     source$
-        .pipe(IMPLEMENT_THIS) // This must be pure
-        .subscribe(IMPLEMENT_THIS); // Side effects should be contained here
+        .pipe(map(({ clientX, clientY }) => ({ x: clientX, y: clientY }))) // This must be pure
+        .subscribe(pos => {
+            elem.textContent = `${pos.x}, ${pos.y}`;
+
+            if (pos.x > 400) {
+                elem.classList.add("highlight");
+            } else {
+                elem.classList.remove("highlight");
+            }
+        }); // Side effects should be contained here
 }
 
 /*****************************************************************
@@ -176,17 +184,15 @@ function animatedRect() {
 
     /** Write your code after here */
 
-    const source$ = IMPLEMENT_THIS;
+    const source$ = interval(1);
 
     const move$ = source$
         .pipe(
-            takeUntil(IMPLEMENT_THIS),
+            takeUntil(timer(1000)),
 
-            scan(IMPLEMENT_THIS),
+            scan(x => x + 1, startProps.x),
         )
-        .subscribe((newX: IMPLEMENT_THIS) =>
-            rect.setAttribute("x", String(newX)),
-        );
+        .subscribe((newX: number) => rect.setAttribute("x", String(newX)));
 }
 
 /*****************************************************************
@@ -214,12 +220,15 @@ function animatedRect2() {
     const moveDownRight$ = interval(10)
         .pipe(
             // Stop taking values after some amount of time
-            IMPLEMENT_THIS,
+            takeUntil(timer(1410)),
 
             // Update position of rectangle
-            IMPLEMENT_THIS,
+            scan(({ x, y }) => ({ x: x + 1, y: y + 1 }), {
+                x: startProps.x,
+                y: startProps.y,
+            }),
         )
-        .subscribe(({ x, y }: IMPLEMENT_THIS) => {
+        .subscribe(({ x, y }: { x: number; y: number }) => {
             rect.setAttribute("x", String(x));
             rect.setAttribute("y", String(y));
         });
@@ -252,10 +261,10 @@ function keyboardControl() {
      * @returns Observable stream that indicates changes in state for
      *  the particular keypress
      */
-    const fromKey = (keyCode: string, IMPLEMENT_THIS: IMPLEMENT_THIS) =>
+    const fromKey = (keyCode: string, rectPos: { x: number; y: number }) =>
         key$.pipe(
             filter(({ code }) => code === keyCode),
-            map(() => IMPLEMENT_THIS),
+            map(() => rectPos),
         );
 
     /**
@@ -263,13 +272,13 @@ function keyboardControl() {
      */
 
     /** Decrease x */
-    const left$ = fromKey("KeyA", IMPLEMENT_THIS);
+    const left$ = fromKey("KeyA", { x: -10, y: 0 });
     /** Decrease y */
-    const up$ = fromKey("KeyW", IMPLEMENT_THIS);
+    const up$ = fromKey("KeyW", { x: 0, y: -10 });
     /** Increase x */
-    const right$ = fromKey("KeyD", IMPLEMENT_THIS);
+    const right$ = fromKey("KeyD", { x: 10, y: 0 });
     /** Increase y */
-    const down$ = fromKey("KeyS", IMPLEMENT_THIS);
+    const down$ = fromKey("KeyS", { x: 0, y: 10 });
 
     /**
      * /Hint/: What operator can we use to merge observables?
@@ -279,9 +288,17 @@ function keyboardControl() {
      * /Hint 2/: This should make use of the scan function
      */
 
-    IMPLEMENT_THIS(left$, down$, up$, right$)
-        .pipe()
-        .subscribe(({ x, y }: IMPLEMENT_THIS) => {
+    merge(left$, down$, up$, right$)
+        .pipe(
+            scan(
+                (currPos, newPos) => ({
+                    x: currPos.x + newPos.x,
+                    y: currPos.y + newPos.y,
+                }),
+                { x: startProps.x, y: startProps.y },
+            ),
+        )
+        .subscribe(({ x, y }: { x: number; y: number }) => {
             rect.setAttribute("x", String(x));
             rect.setAttribute("y", String(y));
         });
@@ -332,7 +349,14 @@ function printWithDelay() {
 
     /** Write your code after here */
 
-    csvText$.pipe(IMPLEMENT_THIS).subscribe(IMPLEMENT_THIS);
+    csvText$.pipe(map(csvText => csvText.split("\n"))).subscribe(lines => {
+        lines.forEach(line => {
+            const [delayTime, message] = line.split(",");
+            timer(Number(delayTime) * 1000).subscribe(() => {
+                console.log(message, delayTime);
+            });
+        });
+    });
 }
 /**
  * Do Not Modify
