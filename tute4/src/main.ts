@@ -66,10 +66,11 @@ abstract class RNG {
  * @param seed The seed for the random number generator
  */
 export function createRngStreamFromSource<T>(source$: Observable<T>) {
-    return function createRngStream(
-        seed: number = 0,
-    ): Observable<IMPLEMENT_THIS> {
-        const randomNumberStream = source$.pipe(IMPLEMENT_THIS);
+    return function createRngStream(seed: number = 0): Observable<number> {
+        const randomNumberStream = source$.pipe(
+            scan((currentSeed: number) => RNG.hash(currentSeed), seed),
+            map(RNG.scale),
+        );
 
         return randomNumberStream;
     };
@@ -80,9 +81,19 @@ const main = () => {
     // - vertical position of dot
     // - vertical velocity of dot
     // - number of bounces
-    type State = IMPLEMENT_THIS;
+    type State = {
+        x: number;
+        y: number;
+        yVelo: number;
+        numBounces: number;
+    };
 
-    const initialState: State = IMPLEMENT_THIS;
+    const initialState: State = {
+        x: 25,
+        y: 25,
+        yVelo: 0,
+        numBounces: 0,
+    };
 
     /*****************************************************************
      * Exercise 2 — Create the jump stream
@@ -94,10 +105,31 @@ const main = () => {
      *
      * This should produce a stream of (state) => newState functions.
      *****************************************************************/
-    const jump$: Observable<(s: State) => State> = fromEvent<KeyboardEvent>(
-        document,
-        "keydown",
-    ).pipe(map(_ => s => s));
+    // const jump$: Observable<(s: State) => State> = fromEvent<KeyboardEvent>(
+    //     document,
+    //     "keydown",
+    // ).pipe(
+    //     filter(event => event.code === "Space"),
+    //     map(_ => (state: State) => ({ ...state, yVelo: -10 })),
+    // );
+
+    const spaceKey$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        filter(event => event.code === "Space"),
+    );
+
+    const randomJumpVelocity$ = createRngStreamFromSource(spaceKey$)(
+        Constants.SEED,
+    );
+
+    const jump$: Observable<(s: State) => State> = randomJumpVelocity$.pipe(
+        map(
+            randomValue =>
+                (state: State): State => ({
+                    ...state,
+                    yVelo: randomValue * 3 - 9,
+                }),
+        ),
+    );
 
     /*****************************************************************
      * Exercise 3 — Create the tick stream
@@ -111,7 +143,19 @@ const main = () => {
      * Output should be a function: (state) => newState
      *****************************************************************/
     const tick$: Observable<(s: State) => State> = interval(20).pipe(
-        map(_ => s => s),
+        map(() => (state: State): State => {
+            const nextVelocity = state.yVelo + Constants.GRAVITY;
+            const nextY = state.y + nextVelocity;
+            const hasLanded =
+                state.y < Constants.GROUND && nextY >= Constants.GROUND;
+
+            return {
+                ...state,
+                y: Math.min(nextY, Constants.GROUND),
+                yVelo: hasLanded ? 0 : nextVelocity,
+                numBounces: hasLanded ? state.numBounces + 1 : state.numBounces,
+            };
+        }),
     );
 
     /*****************************************************************
@@ -123,8 +167,8 @@ const main = () => {
      *
      * This stream will represent the full evolution of game state over time.
      *****************************************************************/
-    const state$: Observable<State> = merge(IMPLEMENT_THIS).pipe(
-        scan((state, reducerFn) => IMPLEMENT_THIS, initialState),
+    const state$: Observable<State> = merge(jump$, tick$).pipe(
+        scan((state, reducerFn) => reducerFn(state), initialState),
     );
 
     /*****************************************************************
@@ -139,7 +183,8 @@ const main = () => {
     const bounceCounter = document.getElementById("numBounces") as HTMLElement;
 
     state$.subscribe(state => {
-        IMPLEMENT_THIS;
+        dot.style.top = state.y + "px";
+        bounceCounter.textContent = state.numBounces.toString();
     });
 
     /*****************************************************************
