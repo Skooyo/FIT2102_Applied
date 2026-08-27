@@ -19,6 +19,8 @@ const Constants = {
     GRAVITY: 1,
     GROUND: 378.5,
     SEED: 1234,
+    MAX_JUMP: -12,
+    MIN_JUMP: -6,
 };
 
 // Stub value to indicate an implementation
@@ -124,13 +126,16 @@ const main = () => {
     );
 
     const jump$: Observable<(s: State) => State> = randomJumpVelocity$.pipe(
-        map(
-            randomValue =>
-                (state: State): State => ({
-                    ...state,
-                    yVelo: randomValue * 3 - 9,
-                }),
-        ),
+        map(randomValue => (state: State): State => {
+            const normalized = (randomValue + 1) / 2; // normalize the random value to a range of 0-1
+            const velocity =
+                normalized * (Constants.MAX_JUMP - Constants.MIN_JUMP) +
+                Constants.MIN_JUMP;
+            return {
+                ...state,
+                yVelo: velocity,
+            };
+        }),
     );
 
     /*****************************************************************
