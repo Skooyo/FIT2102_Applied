@@ -7,6 +7,8 @@ import {
     map,
     merge,
     scan,
+    startWith,
+    switchMap,
     type Observable,
 } from "rxjs";
 
@@ -90,7 +92,7 @@ const main = () => {
 
     const initialState: State = {
         x: 25,
-        y: 25,
+        y: Constants.GROUND,
         yVelo: 0,
         numBounces: 0,
     };
@@ -167,8 +169,21 @@ const main = () => {
      *
      * This stream will represent the full evolution of game state over time.
      *****************************************************************/
-    const state$: Observable<State> = merge(jump$, tick$).pipe(
-        scan((state, reducerFn) => reducerFn(state), initialState),
+    // const state$: Observable<State> = merge(jump$, tick$).pipe(
+    //     scan((state, reducerFn) => reducerFn(state), initialState),
+    // );
+
+    const restart$ = fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        filter(event => event.code === "KeyR"),
+    );
+
+    const state$: Observable<State> = restart$.pipe(
+        startWith(null),
+        switchMap(() =>
+            merge(jump$, tick$).pipe(
+                scan((state, reducerFn) => reducerFn(state), initialState),
+            ),
+        ),
     );
 
     /*****************************************************************
