@@ -146,15 +146,16 @@ function mousePosObservable() {
     const source$ = fromEvent<MouseEvent>(document, "mousemove");
 
     source$
-        .pipe(map(({ clientX, clientY }) => ({ x: clientX, y: clientY }))) // This must be pure
-        .subscribe(pos => {
-            elem.textContent = `${pos.x}, ${pos.y}`;
-
-            if (pos.x > 400) {
-                elem.classList.add("highlight");
-            } else {
-                elem.classList.remove("highlight");
-            }
+        .pipe(
+            map(({ clientX, clientY }: MouseEvent) => ({
+                x: clientX,
+                y: clientY,
+                highlight: clientX > 400,
+            })),
+        )
+        .subscribe(({ x, y, highlight }) => {
+            elem.textContent = `${x}, ${y}`;
+            elem.classList.toggle("highlight", highlight);
         }); // Side effects should be contained here
 }
 
@@ -217,7 +218,7 @@ function animatedRect2() {
 
     /** Write your code after here */
 
-    const moveDownRight$ = interval(10)
+    const moveDownRight$ = interval(1)
         .pipe(
             // Stop taking values after some amount of time
             takeUntil(timer(1410)),
