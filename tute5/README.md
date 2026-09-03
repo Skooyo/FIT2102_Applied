@@ -1,33 +1,21 @@
-// load this file at the top of the HTML to do tasks before content has loaded
-// N.B. don't try to access elements in here they don't exist yet
+---
+title: Lambda calculus
+---
 
-function load() {
-    // load theme im to prevent screen flicker
-    const darkCSSRaw = localStorage.getItem("darkCSS");
-    const isDark =
-        darkCSSRaw === "true" ||
-        (darkCSSRaw !== null && darkCSSRaw.trim() === "true");
+## Assessed exercises
 
-    document.documentElement.setAttribute(
-        "data-theme",
-        isDark ? "dark" : "light",
-    );
+This week’s exercises will be more theoretical and shorter to allow time for working on your assignment.
 
-    // restore vertical scroll position on return to page
-    // should this happen after mocha run  because that populates the test content
-    // on the screen - it seems to work here in preload fine though
-    const scrollSaved = sessionStorage.getItem("scrollY");
-    const scrollY = Number(scrollSaved);
-    if (!isNaN(scrollY)) {
-        window.scroll(0, scrollY);
-    }
+There is no automated testing this week. Check your work carefully.
 
-    // persist vertical scroll position on leave page
-    // onbeforeunload doesn't work on safari IOS
-    // - if you are coding on that you have bigger problems
-    window.onbeforeunload = () => {
-        sessionStorage.setItem("scrollY", window.scrollY.toString());
-    };
-}
+Click on each exercise to display the instructions.
 
-load();
+The exercises are to be done either digitally or on pen and paper. Please submit a PDF or text file to Moodle.
+
+If you submit a text file, you can write “λ” as “\” (this is the Haskell way).
+
+## Supplementary activities
+
+There are additional supplementary Observable and RxJS exercises with sample solutions on Moodle. These are for students who would like more practice on building more complex Observable programs and state management, particularly for the assignment.
+
+The supplementary activities will **not** be assessed.
