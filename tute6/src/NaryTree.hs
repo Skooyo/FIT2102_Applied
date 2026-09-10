@@ -25,7 +25,8 @@ tree = Node 2 [Node 3 [Node 41 [], Node 42 [], Node 43 []], Node 5 [Node 6 []]]
 -- >>> depth tree
 -- 3
 depth :: NaryTree a -> Int
-depth = undefined
+depth (Node _ []) = 1
+depth (Node _ children) = 1 + maximum (map depth children)
 
 -- | Map a function over a tree.
 --
@@ -35,4 +36,4 @@ depth = undefined
 -- >>> mapTree (`mod` 2) tree
 -- Node 0 [Node 1 [Node 1 [],Node 0 [],Node 1 []],Node 1 [Node 0 []]]
 mapTree :: (a -> b) -> NaryTree a -> NaryTree b
-mapTree = undefined
+mapTree f (Node value children) = Node (f value) (map (mapTree f) children)

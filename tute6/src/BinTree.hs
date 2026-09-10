@@ -34,7 +34,8 @@ one = Node 1 Leaf Leaf
 -- >>> depth tree
 -- 3
 depth :: BinTree a -> Int
-depth = undefined
+depth Leaf = 0
+depth (Node _ left right) = 1 + max (depth left) (depth right)
 
 -- | Map a function over a tree.
 --
@@ -47,4 +48,5 @@ depth = undefined
 -- >>> mapTree (`mod` 2) tree
 -- Node 0 (Node 1 Leaf (Node 1 Leaf Leaf)) (Node 0 Leaf Leaf)
 mapTree :: (a -> b) -> BinTree a -> BinTree b
-mapTree = undefined
+mapTree _ Leaf = Leaf
+mapTree f (Node value left right) = Node (f value) (mapTree f left) (mapTree f right)

@@ -21,7 +21,8 @@ import Text.Read (readMaybe)
 -- >>> mapMaybe reverse (Just "hi")
 -- Just "ih"
 mapMaybe :: (a -> b) -> Maybe a -> Maybe b
-mapMaybe = undefined
+mapMaybe _ Nothing = Nothing
+mapMaybe f (Just value) = Just (f value)
 
 -- | Applies a function that returns a `Maybe` to the value inside a `Just`,
 -- flattening the result. If the input is `Nothing`, it returns `Nothing`.
@@ -41,7 +42,8 @@ mapMaybe = undefined
 -- >>> flatMapMaybe parseNumber Nothing
 -- Nothing
 flatMapMaybe :: (a -> Maybe b) -> Maybe a -> Maybe b
-flatMapMaybe = undefined
+flatMapMaybe _ Nothing = Nothing
+flatMapMaybe f (Just value) = f value
 
 -- | Parse a number from String
 -- >>> parseNumber "42.5"
