@@ -17,9 +17,12 @@ module Refactor (doubleAll, flipBools, sumPositives, grade, classify, avgPositiv
 --
 -- >>> doubleAll [0,-3]
 -- [0,-6]
+doubleAllOld :: [Int] -> [Int]
+doubleAllOld [] = []
+doubleAllOld (x : xs) = (2 * x) : doubleAllOld xs
+
 doubleAll :: [Int] -> [Int]
-doubleAll [] = []
-doubleAll (x : xs) = (2 * x) : doubleAll xs
+doubleAll = map (* 2)
 
 -- |
 -- Negates every Bool in a list.
@@ -32,9 +35,12 @@ doubleAll (x : xs) = (2 * x) : doubleAll xs
 --
 -- >>> flipBools (replicate 4 True)
 -- [False,False,False,False]
+flipBoolsOld :: [Bool] -> [Bool]
+flipBoolsOld [] = []
+flipBoolsOld (x : xs) = not x : flipBools xs
+
 flipBools :: [Bool] -> [Bool]
-flipBools [] = []
-flipBools (x : xs) = not x : flipBools xs
+flipBools = map not
 
 -- |
 -- Sums only the positive integers in a list.
@@ -50,20 +56,23 @@ flipBools (x : xs) = not x : flipBools xs
 --
 -- >>> sumPositives [10, -1, 2, -3, 4]
 -- 16
-sumPositives :: [Int] -> Int
-sumPositives [] = 0
-sumPositives (x : xs) =
+sumPositivesOld :: [Int] -> Int
+sumPositivesOld [] = 0
+sumPositivesOld (x : xs) =
     if x > 0
-        then x + sumPositives xs
-        else sumPositives xs
+        then x + sumPositivesOld xs
+        else sumPositivesOld xs
+
+sumPositives :: [Int] -> Int
+sumPositives = sum . filter (> 0)
 
 -- |
 -- Returns a letter grade for a score.
 --
 -- >>> map grade [95, 84, 73, 65, 12]
 -- ["HD","HD","D","C","N"]
-grade :: Int -> String
-grade n =
+gradeOld :: Int -> String
+gradeOld n =
     if n >= 80
         then "HD"
         else
@@ -76,6 +85,14 @@ grade n =
                             if n >= 50
                                 then "P"
                                 else "N"
+
+grade :: Int -> String
+grade n
+    | n >= 80 = "HD"
+    | n >= 70 = "D"
+    | n >= 60 = "C"
+    | n >= 50 = "P"
+    | otherwise = "N"
 
 -- |
 -- Classifies an integer as "zero", "positive", or "negative".
@@ -90,13 +107,19 @@ grade n =
 --
 -- >>> classify (-2)
 -- "negative"
-classify :: Int -> String
-classify n =
+classifyOld :: Int -> String
+classifyOld n =
     case True of
         _
             | n == 0 -> "zero"
             | n > 0 -> "positive"
             | otherwise -> "negative"
+
+classify :: Int -> String
+classify n
+    | n == 0 = "zero"
+    | n > 0 = "positive"
+    | otherwise = "negative"
 
 -- |
 -- Computes the average of all positive numbers in a list of Doubles.
@@ -113,8 +136,8 @@ classify n =
 --
 -- >>> avgPositives [10.0, 20.0]
 -- Just 15.0
-avgPositives :: [Double] -> Maybe Double
-avgPositives xs = go xs 0 0
+avgPositivesOld :: [Double] -> Maybe Double
+avgPositivesOld xs = go xs 0 0
   where
     go [] total count =
         if count == 0
@@ -124,3 +147,10 @@ avgPositives xs = go xs 0 0
         if y > 0
             then go ys (total + y) (count + 1)
             else go ys total count
+
+avgPositives :: [Double] -> Maybe Double
+avgPositives xs
+    | null positives = Nothing
+    | otherwise = Just (sum positives / fromIntegral (length positives))
+  where
+    positives = filter (> 0) xs

@@ -45,7 +45,9 @@ prettyPrintMessage indentLevel (msgType, url) =
 -- >>> calcIndent ("POST", [0,1,2]) ("GET", "http://example.com")
 -- ("GET",[0,1,2,0])
 calcIndent :: (String, [Int]) -> WebSocketMessage -> (String, [Int])
-calcIndent (prevType, acc) (msgType, _) = undefined
+calcIndent (prevType, acc) (msgType, _) = if msgType == prevType
+    then (msgType, acc ++ [last acc + 1])
+    else (msgType, acc ++ [0])
 
 -- | Function to pretty print an array of WebSocket messages with indentation based on message type
 -- /Hint/ Use foldl to `reduce` across an accumulator of type  (String, [Int])
@@ -61,14 +63,18 @@ calcIndent (prevType, acc) (msgType, _) = undefined
 -- >>> calculateIndents [("GET", "http://example.com")]
 -- [0]
 calculateIndents :: [WebSocketMessage] -> [Int]
-calculateIndents = undefined
+calculateIndents = tail . snd . foldl calcIndent ("", [0])
 
 -- | formatOutput generates a string that pretty-prints a list of WebSocket messages
 -- with appropriate indentation based on message types.
 -- >>> formatOutput exampleMessages
 -- "type: GET\nlink: /index.html\n----\n  type: GET\n  link: /hello/world\n  ----\n    type: GET\n    link: /\n    ----\ntype: POST\nlink: /submit\n----\ntype: GET\nlink: /contact\n----\n  type: GET\n  link: /about\n  ----\ntype: POST\nlink: /login\n----\n  type: POST\n  link: /logout\n  ----"
 formatOutput :: [WebSocketMessage] -> String
-formatOutput = undefined
+formatOutput messages =
+    intercalate "\n"
+        (zipWith prettyPrintMessage
+            (calculateIndents messages)
+            messages)
 
 -- Example usage
 exampleMessages :: [WebSocketMessage]
