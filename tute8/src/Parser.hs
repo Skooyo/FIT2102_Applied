@@ -49,7 +49,7 @@ newtype Parser a = Parser (String -> Maybe (String, a))
 -- >>> parse (Parser f) "abc"
 -- Just ("","abc")
 parse :: Parser a -> (String -> Maybe (String, a))
-parse (Parser p) input = undefined
+parse (Parser p) input = p input
 
 -- | Parse a single character
 --
@@ -61,8 +61,8 @@ parse (Parser p) input = undefined
 char :: Parser Char
 char = Parser f
   where
-    f "" = undefined
-    f (x : xs) = undefined
+    f "" = Nothing
+    f (x : xs) = Just (xs, x)
 
 -- | Parse numbers as int until non-digit
 --
@@ -85,7 +85,12 @@ int = Parser f
 -- >>> parse (is 'c') "abc"
 -- Nothing
 is :: Char -> Parser Char
-is c = undefined
+is c = Parser f
+  where
+    f "" = Nothing
+    f (x : xs)
+        | x == c = Just (xs, x)
+        | otherwise = Nothing
 
 -- | Parses not a specific character, otherwise return Nothing
 --
@@ -94,7 +99,12 @@ is c = undefined
 -- >>> parse (isNot 'c') "abc"
 -- Just ("bc",'a')
 isNot :: Char -> Parser Char
-isNot c = undefined
+isNot c = Parser f
+  where
+    f "" = Nothing
+    f (x : xs)
+        | x /= c = Just (xs, x)
+        | otherwise = Nothing
 
 -- | Applies the mapping function to the *result* (parsed value) of the parser.
 --
@@ -142,7 +152,7 @@ isNot c = undefined
 -- Just ("bc",'A')
 instance Functor Parser where
     fmap :: (a -> b) -> Parser a -> Parser b
-    fmap f (Parser p) = undefined
+    fmap f (Parser p) = Parser (fmap (fmap (fmap f)) p)
 
 -- |
 --
@@ -174,10 +184,14 @@ instance Applicative Parser where
     -- Returns a parser that always succeeds with the given value,
     -- ignoring the input.
     pure :: a -> Parser a
-    pure a = Parser undefined
+    pure a = Parser (\input -> Just (input, a))
 
     (<*>) :: Parser (a -> b) -> Parser a -> Parser b
-    p1@(Parser a) <*> p2@(Parser b) = undefined
+    p1@(Parser a) <*> p2@(Parser b) = Parser $ \input -> case a input of
+        Nothing -> Nothing
+        Just (rest, f) -> case b rest of
+            Nothing -> Nothing
+            Just (rest', x) -> Just (rest', f x)
 
 -- |
 --
@@ -201,10 +215,12 @@ instance Applicative Parser where
 -- Nothing
 instance Alternative Parser where
     empty :: Parser a
-    empty = undefined
+    empty = Parser $ \_ -> Nothing
 
     (<|>) :: Parser a -> Parser a -> Parser a
-    (<|>) = undefined
+    p1 <|> p2 = Parser $ \input -> case parse p1 input of
+        Nothing -> parse p2 input
+        Just result -> Just result
 
 -- | Recursively parse a string
 --  If the string is non-empty ((x:xs)), you need to parse the first character (x) and then continue parsing the rest of the string (xs).
@@ -219,7 +235,7 @@ instance Alternative Parser where
 -- Just ("anyinput","")
 string :: String -> Parser String
 string "" = pure ""
-string (x : xs) = undefined
+string (x : xs) = (:) <$> is x <*> string xs
 
 -- | Parse zero or more spaces
 --
@@ -235,7 +251,7 @@ string (x : xs) = undefined
 -- >>> parse whitespace ""
 -- Just ("","")
 whitespace :: Parser String
-whitespace = undefined
+whitespace = many (is ' ')
 
 -- | Parse a URL-like string until a space is encountered
 --
@@ -250,7 +266,7 @@ whitespace = undefined
 -- >>> parse parseURL "invalid_url"
 -- Just ("","invalid_url")
 parseURL :: Parser String
-parseURL = undefined
+parseURL = many (isNot ' ')
 
 -- | Parse either "GET" or "POST"
 --
@@ -266,7 +282,7 @@ parseURL = undefined
 -- >>> parse getOrPost "post /lowercase"
 -- Nothing
 getOrPost :: Parser String
-getOrPost = undefined
+getOrPost = string "GET" <|> string "POST"
 
 -- | Parse a tuple of integers
 -- >>> parse parseIntTuple "(3,5)"
@@ -297,4 +313,4 @@ parseIntTuple = (,) <$> (is '(' *> int) <*> (is ',' *> int <* is ')')
 -- >>> parse parseHTTPRequest "POST/homepage HTTP/1.1"
 -- Just ("",("POST","/homepage"))
 parseHTTPRequest :: Parser (String, String)
-parseHTTPRequest = undefined
+parseHTTPRequest = (,) <$> (getOrPost <* whitespace) <*> (parseURL <* optional (whitespace *> string "HTTP/1.1"))

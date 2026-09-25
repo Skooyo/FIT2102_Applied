@@ -26,7 +26,7 @@ import Prelude hiding (liftA2, (<*))
 -- >>> liftA (+1) (Just 7)
 -- Just 8
 liftA :: Applicative f => (a -> b) -> f a -> f b
-liftA f a = undefined
+liftA f a = pure f <*> a
 
 -- | Takes a binary function and applies it to two elements wrapped in a context.
 --
@@ -42,7 +42,7 @@ liftA f a = undefined
 -- >>> liftA2 (+) Nothing (Just 8)
 -- Nothing
 liftA2 :: Applicative f => (a -> b -> c) -> f a -> f b -> f c
-liftA2 f a b = undefined
+liftA2 f a b = pure f <*> a <*> b
 
 -- | Implement a version of the applicative that combines the effects of both sides, but retains only the value of the left-hand side
 --
@@ -68,7 +68,7 @@ liftA2 f a b = undefined
 --
 -- /Hint/: you'll need to lift a binary function that returns the first argument regardless of its second argument into the applicative context
 (<*) :: Applicative f => f a -> f b -> f a
-(<*) = undefined
+(<*) = liftA2 const
 
 -- | Try a computation and return its result wrapped in `Just` if it succeeds,
 -- or `Nothing` if it fails.
@@ -87,4 +87,4 @@ liftA2 f a b = undefined
 -- >>> optional ([])
 -- [Nothing]
 optional :: Alternative f => f a -> f (Maybe a)
-optional = undefined
+optional a = fmap Just a <|> pure Nothing

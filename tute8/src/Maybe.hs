@@ -34,7 +34,9 @@ data Maybe a = Just a | Nothing
 -- False
 instance Eq a => Eq (Maybe a) where
     (==) :: Maybe a -> Maybe a -> Bool
-    (==) = undefined
+    (==) (Just x) (Just y) = x == y
+    (==) Nothing Nothing = True
+    (==) _ _ = False
 
 -- |
 -- Just are ordered by comparing the value if Just
@@ -54,7 +56,10 @@ instance Eq a => Eq (Maybe a) where
 -- True
 instance Ord a => Ord (Maybe a) where
     compare :: Maybe a -> Maybe a -> Ordering
-    compare = undefined
+    compare (Just x) (Just y) = x `compare` y
+    compare (Just _) Nothing = GT
+    compare Nothing (Just _) = LT
+    compare Nothing Nothing = EQ
 
 -- |
 -- Mapping over a Maybe applies the function if it exists
@@ -68,7 +73,8 @@ instance Ord a => Ord (Maybe a) where
 -- Nothing
 instance Functor Maybe where
     fmap :: (a -> b) -> Maybe a -> Maybe b
-    fmap = undefined
+    fmap f (Just x) = Just (f x)
+    fmap _ Nothing = Nothing
 
 -- |
 -- see https://tgdwyer.github.io/haskell3/#applicative
@@ -83,10 +89,11 @@ instance Functor Maybe where
 -- Just 6
 instance Applicative Maybe where
     pure :: a -> Maybe a
-    pure = undefined
+    pure x = Just x
 
     (<*>) :: Maybe (a -> b) -> Maybe a -> Maybe b
-    (<*>) = undefined
+    (<*>) (Just f) (Just x) = Just (f x)
+    (<*>) _ _ = Nothing
 
 -- |
 -- see https://tgdwyer.github.io/haskell3/#alternative
@@ -104,7 +111,8 @@ instance Applicative Maybe where
 -- Just 2
 instance Alternative Maybe where
     empty :: Maybe a
-    empty = undefined
+    empty = Nothing
 
     (<|>) :: Maybe a -> Maybe a -> Maybe a
-    (<|>) = undefined
+    (<|>) (Just x) _ = Just x
+    (<|>) Nothing y = y
