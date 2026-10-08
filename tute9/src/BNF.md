@@ -13,6 +13,9 @@ Your job is to write the `<Array>` and `<Object>` sections of the following BNF.
 <String> ::= '"' <StringContents> '"' | '"' '"'
 <StringContents> ::= <Char> | <Char> <StringContents>
 <Char> ::= 'a' | 'b' | 'c' | ...
-<Array> ::= IMPLEMENT_ME
-<Object> ::= IMPLEMENT_ME
+<Array> ::= '[' <ArrayContents> ']' | '[' ']'
+<ArrayContents> ::= <JSON> | <JSON> ',' <ArrayContents>
+<Object> ::= '{' <ObjectContents> '}' | '{' '}'
+<ObjectContents> ::= <Pair> | <Pair> ',' <ObjectContents>
+<Pair> ::= <String> ':' <JSON>
 ```

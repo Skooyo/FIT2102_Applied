@@ -48,7 +48,7 @@ data JsonValue
 -- >>> parse (tok (is 'a')) "abc"
 -- Just ("bc",'a')
 tok :: Parser a -> Parser a
-tok = undefined
+tok p = p <* spaces
 
 -- | Write a function that parses the given char followed by 0 or more spaces.
 --
@@ -60,7 +60,7 @@ tok = undefined
 -- >>> parse (isTok 'a') "dabc"
 -- Nothing
 isTok :: Char -> Parser Char
-isTok = undefined
+isTok = tok . is
 
 -- | Write a function that parses a comma followed by 0 or more spaces.
 --
@@ -72,7 +72,7 @@ isTok = undefined
 -- >>> parse commaTok "dabc"
 -- Nothing
 commaTok :: Parser Char
-commaTok = undefined
+commaTok = isTok ','
 
 -- | Write a function that parses the given string, followed by 0 or more
 -- spaces.
@@ -85,7 +85,7 @@ commaTok = undefined
 -- >>> parse (stringTok "abc") "bc  "
 -- Nothing
 stringTok :: String -> Parser String
-stringTok = undefined
+stringTok = tok . string
 
 -- | Parse a JSON integer.
 --
@@ -104,7 +104,7 @@ stringTok = undefined
 -- >>> parse jsonInteger "abc"
 -- Nothing
 jsonInteger :: Parser JsonValue
-jsonInteger = undefined
+jsonInteger = JInteger <$> tok int
 
 -- | Parse a JSON true literal.
 -- /Hint/ Useful function PCQ=
@@ -115,7 +115,7 @@ jsonInteger = undefined
 -- >>> parse jsonTrue "TRUE"
 -- Nothing
 jsonTrue :: Parser JsonValue
-jsonTrue = undefined
+jsonTrue = JTrue <$ stringTok "true"
 
 -- | Parse a JSON false literal.
 --
@@ -125,7 +125,7 @@ jsonTrue = undefined
 -- >>> parse jsonFalse "FALSE"
 -- Nothing
 jsonFalse :: Parser JsonValue
-jsonFalse = undefined
+jsonFalse = JFalse <$ stringTok "false"
 
 -- | Parse a JSON boolean.
 --
@@ -138,7 +138,7 @@ jsonFalse = undefined
 -- >>> parse jsonBool "TRUE"
 -- Nothing
 jsonBool :: Parser JsonValue
-jsonBool = undefined
+jsonBool = jsonTrue <|> jsonFalse
 
 -- | Parse a JSON null literal.
 --
@@ -148,7 +148,7 @@ jsonBool = undefined
 -- >>> parse jsonNull "NULL"
 -- Nothing
 jsonNull :: Parser JsonValue
-jsonNull = undefined
+jsonNull = JNull <$ stringTok "null"
 
 -- | Parse a sequence of at least one values with a separator.
 --
@@ -164,11 +164,11 @@ jsonNull = undefined
 -- >>> parse ((tok int) `sepBy1` commaTok) "1,2,3"
 -- Just ("",[1,2,3])
 sepBy1 :: Parser a -> Parser b -> Parser [a]
-sepBy1 = undefined
+sepBy1 p sep = p <:> many (sep *> p)
   where
     -- (Optional) cons the results of two parsers
     (<:>) :: Parser a -> Parser [a] -> Parser [a]
-    (<:>) = undefined
+    a <:> as = (:) <$> a <*> as
 
 -- | Parse a sequence of values with a separator.
 --
@@ -184,7 +184,7 @@ sepBy1 = undefined
 -- >>> parse ((tok int) `sepBy` commaTok) "1,2,3"
 -- Just ("",[1,2,3])
 sepBy :: Parser a -> Parser b -> Parser [a]
-sepBy = undefined
+sepBy p sep = sepBy1 p sep <|> pure []
 
 -- | A quoteString is any series of any non-" characters surrounded by " "
 --
@@ -200,7 +200,7 @@ sepBy = undefined
 -- >>> parse quoteString "\"\\abc\"def"
 -- Just ("def","\\abc")
 quoteString :: Parser String
-quoteString = undefined
+quoteString = is '"' *> many (isNot '"') <* is '"'
 
 -- | Parse a JSON string. Handle double-quotes.
 --
@@ -216,7 +216,7 @@ quoteString = undefined
 -- >>> parse jsonString "\"\\abc\"def"
 -- Just ("def",JString "\\abc")
 jsonString :: Parser JsonValue
-jsonString = undefined
+jsonString = JString <$> tok quoteString
 
 -- | Parse a JSON array.
 --
@@ -238,7 +238,7 @@ jsonString = undefined
 -- >>> parse jsonArray "[true, 5, []]"
 -- Just ("",JArray [JTrue,JInteger 5,JArray []])
 jsonArray :: Parser JsonValue
-jsonArray = undefined
+jsonArray = JArray <$> (isTok '[' *> sepBy json commaTok <* isTok ']')
 
 -- | Parse a JSON object.
 --
@@ -259,10 +259,10 @@ jsonArray = undefined
 -- >>> parse jsonObject "{ \"key1\" : true , \"key2\" : false } xyz"
 -- Just ("xyz",JObject [("key1",JTrue),("key2",JFalse)])
 jsonObject :: Parser JsonValue
-jsonObject = undefined
+jsonObject = JObject <$> (isTok '{' *> sepBy kv commaTok <* isTok '}')
   where
     kv :: Parser (String, JsonValue)
-    kv = undefined
+    kv = (,) <$> tok quoteString <* isTok ':' <*> json
 
 -- | Parse a JSON value
 -- Either a Boolean, Integer, String, Null
@@ -279,7 +279,7 @@ jsonObject = undefined
 -- >>> parse jsonVal "null"
 -- Just ("",JNull)
 jsonVal :: Parser JsonValue
-jsonVal = undefined
+jsonVal = asum [jsonInteger, jsonString, jsonBool, jsonNull]
 
 -- | Parse a JSON container, either an array or an object.
 --
@@ -289,7 +289,7 @@ jsonVal = undefined
 -- >>> parse jsonContainer "{ \"key1\" : true , \"key2\" : false } xyz"
 -- Just ("xyz",JObject [("key1",JTrue),("key2",JFalse)])
 jsonContainer :: Parser JsonValue
-jsonContainer = undefined
+jsonContainer = jsonArray <|> jsonObject
 
 -- | Parse a JSON string.
 --
@@ -306,4 +306,4 @@ jsonContainer = undefined
 -- >>> parse json "{ \"key1\" : true , \"key2\" : [7, false] , \"key3\" : { \"key4\" : null } }"
 -- Just ("",JObject [("key1",JTrue),("key2",JArray [JInteger 7,JFalse]),("key3",JObject [("key4",JNull)])])
 json :: Parser JsonValue
-json = undefined
+json = jsonVal <|> jsonContainer

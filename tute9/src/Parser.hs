@@ -82,7 +82,7 @@ space = Parser f
 -- >>> parse (string "hey") "hello bob"
 -- Nothing
 string :: String -> Parser String
-string = undefined
+string = traverse is
 
 -- | Write a parser that will parse zero or more spaces.
 --
@@ -95,7 +95,7 @@ string = undefined
 -- >>> parse spaces "abc"
 -- Just ("abc","")
 spaces :: Parser String
-spaces = undefined
+spaces = many space
 
 -- | Return a parser that produces one or more space chars (consuming
 -- until the first non-space) but fails if:
@@ -110,4 +110,4 @@ spaces = undefined
 -- >>> parse spaces1 "abc"
 -- Nothing
 spaces1 :: Parser String
-spaces1 = undefined
+spaces1 = some space
