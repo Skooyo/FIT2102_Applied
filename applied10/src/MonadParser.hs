@@ -19,7 +19,9 @@ import Parser
 -- prop> \i j -> parse (pure i >>= add j) "" == Just ("",(i + j))
 instance Monad Parser where
     (>>=) :: Parser a -> (a -> Parser b) -> Parser b
-    (>>=) (Parser p) f = undefined
+    (>>=) (Parser p) f = Parser $ \i -> case p i of
+        Just (rest, a) -> parse (f a) rest
+        Nothing -> Nothing
 
 -- | Parse a C++ style array with a fixed length.
 -- Can you do this with applicative? Or do we need to use Monads...
@@ -32,4 +34,14 @@ instance Monad Parser where
 -- >>> parse parseListLength "std::array<int, 5> anotherList = {7, 8, 9, 10}"
 -- Nothing
 parseListLength :: Parser [Int]
-parseListLength = undefined
+parseListLength = do
+    _ <- stringTok "std::array<int,"
+    n <- tok int
+    _ <- isTok '>'
+    _ <- tok (some (isNot ' '))
+    _ <- isTok '='
+    _ <- isTok '{'
+    xs <- sepBy (tok int) (isTok ',')
+    _ <- isTok '}'
+    guard (length xs == n)
+    pure xs

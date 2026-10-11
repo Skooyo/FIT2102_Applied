@@ -38,10 +38,11 @@ import Prelude hiding (Just, Maybe, Nothing)
 -- Just 11
 instance Monad Maybe where
     return :: a -> Maybe a
-    return = undefined
+    return = pure
 
     (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
-    (>>=) = undefined
+    (>>=) Nothing _ = Nothing
+    (>>=) (Just a) f = f a
 
 -- | The `calculateResult` function adds two `Maybe Int` values.
 --   If either value is `Nothing`, the result is `Nothing`.
@@ -65,7 +66,11 @@ instance Monad Maybe where
 -- >>> calculateResult (Just 7) (Just (-3))
 -- Just 4
 calculateResult :: Maybe Int -> Maybe Int -> Maybe Int
-calculateResult = undefined
+calculateResult mx my = case mx of
+    Nothing -> Nothing
+    Just x -> case my of
+        Nothing -> Nothing
+        Just y -> Just (x + y)
 
 -- | This function is the same as previous, but uses the `>>=` (bind) operator to handle the unwrapping of `Maybe` values
 -- and the potential short-circuiting when encountering a `Nothing`.
@@ -87,7 +92,7 @@ calculateResult = undefined
 -- >>> calculateResult' (Just 7) (Just (-3))
 -- Just 4
 calculateResult' :: Maybe Int -> Maybe Int -> Maybe Int
-calculateResult' = undefined
+calculateResult' mx my = mx >>= \x -> my >>= \y -> return (x + y)
 
 -- | This function is the same as previous, but use do notation to handle the unwrapping of `Maybe` values
 -- and the potential short-circuiting when encountering a `Nothing`.
@@ -109,4 +114,7 @@ calculateResult' = undefined
 -- >>> calculateResult'' (Just 7) (Just (-3))
 -- Just 4
 calculateResult'' :: Maybe Int -> Maybe Int -> Maybe Int
-calculateResult'' = undefined
+calculateResult'' mx my = do
+    x <- mx
+    y <- my
+    return (x + y)

@@ -18,32 +18,37 @@ type RouteFunction = (String, String, JsonValue) -> IO (Maybe String)
 -- >>> logConnectionAccepted
 -- Connection accepted
 logConnectionAccepted :: IO ()
-logConnectionAccepted = undefined
+logConnectionAccepted = putStrLn "Connection accepted"
 
 -- | Converts a Socket to a Handle for easier IO operations.
 -- Implement the function that converts a `Socket` to a `Handle`.
 -- HINT: You will need `socketToHandle`.
 convertSocketToHandle :: Socket -> IO Handle
-convertSocketToHandle conn = undefined
+convertSocketToHandle conn = socketToHandle conn ReadWriteMode
 
 -- | Reads a client request from a Handle.
 -- You can use `hGetLine` to read a single line from the provided `Handle`.
 readClientRequest :: Handle -> IO String
-readClientRequest = undefined
+readClientRequest = hGetLine
 
 -- | Sends the response back to the client.
 -- The `sendResponse` function sends a response to the client via the provided `Handle`.
 -- It should use `hPutStr` to write the response string to the handle and `hFlush` to ensure that all the data is sent immediately.
 -- After sending the response, it logs "Response sent" to the console for confirmation.
 sendResponse :: Handle -> String -> IO ()
-sendResponse handle response = undefined
+sendResponse handle response = do
+    hPutStr handle response
+    hFlush handle
+    putStrLn "Response sent"
 
 -- | Cleans up by closing the Handle and Socket.
 -- The `cleanupConnection` function ensures that resources are properly released after handling the client request.
 -- It first should close the `Handle` using `hClose` and then closes the `Socket` using `close`.
 -- Properly closing the connection is important to avoid resource leaks and ensure the server runs efficiently.
 cleanupConnection :: Handle -> Socket -> IO ()
-cleanupConnection handle conn = undefined
+cleanupConnection handle conn = do
+    hClose handle
+    close conn
 
 -- | Follow the steps below to implement the handleConnection function.
 -- /Hint/: this exercise is intended to give you a feel for what "real-world" Haskell
@@ -56,23 +61,23 @@ cleanupConnection handle conn = undefined
 handleConnection :: RouteFunction -> Socket -> IO ()
 handleConnection f conn = do
     -- Step 1: Log the connection being accepted.
-    undefined
+    logConnectionAccepted
     -- Step 2: Convert the socket to a handle.
-    undefined
+    handle <- convertSocketToHandle conn
     -- Step 3: Read the headers from the client request.
-    headers <- pure [""]
+    headers <- readHeaders handle
     -- Step 4: Extract the content length from the headers (defaulting to 0 if not present).
-    undefined
+    let contentLength = fromMaybe 0 (getContentLength headers)
     -- Step 5: If content length > 0, read the request body; otherwise, set the body to an empty string.
-    body <- pure ""
+    body <- if contentLength > 0 then readBody handle contentLength else pure ""
     -- Step 6 (Given): Construct the complete request by concatenating the headers and body.
     let request = fromMaybe "" (safeHead headers) ++ (' ' : body)
     -- Step 7: Generate a response based on the route function and the complete request.
-    undefined
+    response <- generateResponse f request
     -- Step 8: Send the generated response back to the client via the handle.
-    undefined
+    sendResponse handle response
     -- Step 9: Clean up by closing the handle and the connection.
-    undefined
+    cleanupConnection handle conn
 
 -- | Server loop to accept and handle incoming connections
 -- /Hint/: As above, more simple IO Monad function calls in do-block syntax.
@@ -80,13 +85,13 @@ serverLoop :: RouteFunction -> Socket -> IO ()
 serverLoop f sock = do
     -- Step 1: Accept a connection from a client.
     -- The `accept` function listens for incoming connections on the socket `sock`.
-    undefined
+    connection <- accept sock
     -- Step 2: Extract the client's socket from the connection tuple.
-    undefined
+    let conn = fst connection
     -- Step 3: Handle the connection with the client.
-    undefined
+    handleConnection f conn
     -- Step 4: Continue the server loop to accept more connections.
-    undefined
+    serverLoop f sock
 
 -- /********************
 -- GIVEN FUNCTIONS
